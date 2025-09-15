@@ -21,3 +21,5 @@ I have created a **Strapi application** with a BlogPost content type and added e
 3. Created a Strapi project:
    ```bash
    npx create-strapi-app@latest my-strapi-project
+4.Logged into the Strapi admin panel and created BlogPost entries.
+5.Committed the project code and pushed it to my own branch.
