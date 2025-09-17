@@ -1,7 +1,5 @@
-<<<<<<< HEAD
-#  Strapi -Task 1  
-
 This repository contains my completed task for the PearlThoughts Internship Program.  
+#  Strapi -Task 1  
 I have created a **Strapi application** with a BlogPost content type and added entries as part of the assignment.
 
 
@@ -26,9 +24,10 @@ I have created a **Strapi application** with a BlogPost content type and added e
 
 5.Committed the project code and pushed it to my own branch.
 
+---
 
 #  Strapi  Dockerized Setup -Task 2
-# Strapi Project – Dockerized Setup
+## Strapi Project – Dockerized Setup
 
 This project containerizes a Strapi CMS application using **Dockerfile** and **docker-compose**.
 
@@ -92,10 +91,10 @@ This project containerizes a Strapi CMS application using **Dockerfile** and **d
   docker-compose up
   ```
 
+---
 
 
-=======
-# Strapi + PostgreSQL + Nginx Docker Setup
+# Task-3 Strapi + PostgreSQL + Nginx Docker Setup
 
 This setup runs **Strapi**, **PostgreSQL**, and **Nginx** in Docker containers, all connected via a custom user-defined network.
 
@@ -153,5 +152,4 @@ You should see:
 * Runs on port `80`
 * Proxies `http://localhost → http://strapi:1337`
 
----
->>>>>>> 7309fed (Docker Networking)
+
