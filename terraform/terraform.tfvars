@@ -1,0 +1,5 @@
+docker_image = "jushlineanitha/strapi-app:latest"
+key_name     = "strapi-key-jushline"        
+instance_type = "t2.micro"
+project_tag  = "Task-5-jushline"
+aws_region = "ap-south-1"
