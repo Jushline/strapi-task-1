@@ -3,7 +3,7 @@ name: CI - Build and Push Docker Image
 on:
   push:
     branches:
-      - jushline
+      - jushline 
 
 jobs:
   docker:
@@ -19,9 +19,10 @@ jobs:
           username: ${{ secrets.DOCKER_HUB_USERNAME }}
           password: ${{ secrets.DOCKER_HUB_TOKEN }}
 
-      - name: Build Docker image
-        run: |
-          IMAGE=${{ secrets.DOCKER_HUB_USERNAME }}/${{ secrets.DOCKER_HUB_REPO }}:${{ github.sha }}
-          docker build -t $IMAGE .
-          docker push $IMAGE
-          echo "image=$IMAGE" >> $GITHUB_OUTPUT
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: jushlineanitha/strapi-app:${{ github.sha }}
