@@ -1,49 +1,57 @@
-resource "aws_vpc" "strapi_vpc" {
-  cidr_block = "10.0.0.0/16"
+# Use the default VPC instead of creating a new one
+data "aws_vpc" "default" {
+  default = true
+}
+
+# Get the default subnets in the default VPC
+data "aws_subnet_ids" "default" {
+  vpc_id = data.aws_vpc.default.id
+}
+
+# (Optional) If you want to see subnet details
+data "aws_subnet" "default_subnet" {
+  id = element(data.aws_subnet_ids.default.ids, 0)
+}
+
+# Security Group for Strapi
+resource "aws_security_group" "strapi_sg" {
+  name        = "${var.project_tag}-sg"
+  description = "Allow SSH, HTTP, and Strapi access"
+  vpc_id      = data.aws_vpc.default.id
+
+  ingress {
+    description = "SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "HTTP"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Strapi"
+    from_port   = 1337
+    to_port     = 1337
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   tags = {
-    Name    = "${var.project_tag}-vpc"
+    Name    = "${var.project_tag}-sg"
     Project = var.project_tag
   }
-}
-
-resource "aws_subnet" "strapi_subnet" {
-  vpc_id                  = aws_vpc.strapi_vpc.id
-  cidr_block              = "10.0.1.0/24"
-  availability_zone       = "ap-south-1a"   
-  map_public_ip_on_launch = true
-
-  tags = {
-    Name    = "${var.project_tag}-public-subnet"
-    Project = var.project_tag
-  }
-}
-
-resource "aws_internet_gateway" "strapi_igw" {
-  vpc_id = aws_vpc.strapi_vpc.id
-
-  tags = {
-    Name    = "${var.project_tag}-igw"
-    Project = var.project_tag
-  }
-}
-
-resource "aws_route_table" "strapi_rt" {
-  vpc_id = aws_vpc.strapi_vpc.id
-
-  tags = {
-    Name    = "${var.project_tag}-rt"
-    Project = var.project_tag
-  }
-}
-
-resource "aws_route" "default_route" {
-  route_table_id         = aws_route_table.strapi_rt.id
-  destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = aws_internet_gateway.strapi_igw.id
-}
-
-resource "aws_route_table_association" "strapi_rta" {
-  subnet_id      = aws_subnet.strapi_subnet.id
-  route_table_id = aws_route_table.strapi_rt.id
 }
