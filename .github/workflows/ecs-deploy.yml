@@ -31,7 +31,7 @@ jobs:
         working-directory: ./terraform
         run: terraform init
 
-      - name: Terraform Apply
+      - name: Terraform Apply (create infra)
         working-directory: ./terraform
         run: terraform apply -auto-approve
 
@@ -52,22 +52,28 @@ jobs:
 
       - name: Get AWS account ID
         id: acct
-        run: echo "::set-output name=ID::$(aws sts get-caller-identity --query Account --output text)"
+        run: |
+          echo "ID=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_OUTPUT
 
       - name: Login to ECR
         run: |
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.acct.outputs.ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
+            | docker login --username AWS --password-stdin ${{ steps.acct.outputs.ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
-      - name: Build, Tag, Push
+      - name: Build, Tag & Push to ECR
         env:
           AWS_ACCOUNT_ID: ${{ steps.acct.outputs.ID }}
           AWS_REGION: ${{ secrets.AWS_REGION }}
           ECR_REPOSITORY: strapi-app
           IMAGE_TAG: latest
         run: |
+          set -e
           ECR_REG="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           REPO="${ECR_REG}/${ECR_REPOSITORY}"
-          aws ecr describe-repositories --repository-names "${ECR_REPOSITORY}" --region ${AWS_REGION} || aws ecr create-repository --repository-name "${ECR_REPOSITORY}" --region ${AWS_REGION}
+          # create repo if not exists
+          aws ecr describe-repositories --repository-names "${ECR_REPOSITORY}" --region ${AWS_REGION} || \
+            aws ecr create-repository --repository-name "${ECR_REPOSITORY}" --region ${AWS_REGION}
+          # build (npm install used in Dockerfile)
           docker build -t "${ECR_REPOSITORY}:${IMAGE_TAG}" .
           docker tag "${ECR_REPOSITORY}:${IMAGE_TAG}" "${REPO}:${IMAGE_TAG}"
           aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin "${ECR_REG}"
