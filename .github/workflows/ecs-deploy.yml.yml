@@ -1,0 +1,84 @@
+name: infra-and-deploy
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+
+jobs:
+  terraform:
+    name: Terraform apply
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: ./terraform
+        run: terraform apply -auto-approve -var="image_tag=latest"
+
+  build_and_push:
+    name: Build and push to ECR
+    needs: terraform
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Get AWS account ID
+        id: acct
+        run: echo "::set-output name=ID::$(aws sts get-caller-identity --query Account --output text)"
+
+      - name: Login to ECR
+        run: |
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${!{ steps.acct.outputs.ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+        # Note: we will also fallback to doing create-repo if not present.
+
+      - name: Build, Tag, Push
+        env:
+          AWS_ACCOUNT_ID: ${{ steps.acct.outputs.ID }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          ECR_REPOSITORY: strapi-app
+          IMAGE_TAG: latest
+        run: |
+          ECR_REG="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          REPO="${ECR_REG}/${ECR_REPOSITORY}"
+          # create repo if not exists (terraform already created, but safe)
+          aws ecr describe-repositories --repository-names "${ECR_REPOSITORY}" --region ${AWS_REGION} || aws ecr create-repository --repository-name "${ECR_REPOSITORY}" --region ${AWS_REGION}
+          docker build -t "${ECR_REPOSITORY}:${IMAGE_TAG}" .
+          docker tag "${ECR_REPOSITORY}:${IMAGE_TAG}" "${REPO}:${IMAGE_TAG}"
+          aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin "${ECR_REG}"
+          docker push "${REPO}:${IMAGE_TAG}"
+
+      - name: Force new ECS deployment
+        env:
+          CLUSTER: strapi-cluster
+          SERVICE: strapi-app-service
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          aws ecs update-service --cluster ${CLUSTER} --service ${SERVICE} --force-new-deployment --region ${AWS_REGION}
