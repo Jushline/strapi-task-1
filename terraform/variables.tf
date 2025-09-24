@@ -3,6 +3,17 @@ variable "aws_region" {
   default     = "ap-south-1"
 }
 
+variable "aws_access_key" {
+  description = "AWS Access Key ID"
+  type        = string
+}
+
+variable "aws_secret_key" {
+  description = "AWS Secret Access Key"
+  type        = string
+  sensitive   = true
+}
+
 variable "app_name" {
   description = "Application name"
   default     = "strapi-app-jushline"
@@ -33,7 +44,7 @@ variable "memory" {
 
 variable "ecr_repo_name" {
   description = "ECR repository name"
-  default     = "strapi-app-jushline"
+  default     = "strapi-app"
 }
 
 variable "image_tag" {

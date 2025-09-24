@@ -33,7 +33,10 @@ jobs:
 
       - name: Terraform Apply
         working-directory: ./terraform
-        run: terraform apply -auto-approve -var="image_tag=latest"
+        run: terraform apply -auto-approve \
+          -var="aws_access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" \
+          -var="aws_secret_key=${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+          -var="image_tag=latest"
 
   build_and_push:
     name: Build and push to ECR
@@ -56,8 +59,7 @@ jobs:
 
       - name: Login to ECR
         run: |
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${!{ steps.acct.outputs.ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-        # Note: we will also fallback to doing create-repo if not present.
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.acct.outputs.ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
       - name: Build, Tag, Push
         env:
@@ -68,7 +70,6 @@ jobs:
         run: |
           ECR_REG="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           REPO="${ECR_REG}/${ECR_REPOSITORY}"
-          # create repo if not exists (terraform already created, but safe)
           aws ecr describe-repositories --repository-names "${ECR_REPOSITORY}" --region ${AWS_REGION} || aws ecr create-repository --repository-name "${ECR_REPOSITORY}" --region ${AWS_REGION}
           docker build -t "${ECR_REPOSITORY}:${IMAGE_TAG}" .
           docker tag "${ECR_REPOSITORY}:${IMAGE_TAG}" "${REPO}:${IMAGE_TAG}"
@@ -77,7 +78,7 @@ jobs:
 
       - name: Force new ECS deployment
         env:
-          CLUSTER: strapi-cluster
+          CLUSTER: strapi-cluster-jushline
           SERVICE: strapi-app-service
           AWS_REGION: ${{ secrets.AWS_REGION }}
         run: |

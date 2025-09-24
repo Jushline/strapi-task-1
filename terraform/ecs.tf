@@ -8,37 +8,11 @@ resource "aws_ecs_task_definition" "strapi" {
   memory                   = var.memory
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
 
-  container_definitions = jsonencode([
-    {
-      name  = var.app_name
-      image = "${aws_ecr_repository.strapi.repository_url}:${var.image_tag}"
-      essential = true
+  # ✅ Reference existing role instead of creating new one
+  execution_role_arn       = data.aws_iam_role.ecs_task_execution_role.arn
 
-      portMappings = [
-        {
-          containerPort = var.container_port
-          protocol      = "tcp"
-        }
-      ]
-
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          "awslogs-group"         = aws_cloudwatch_log_group.strapi.name
-          "awslogs-region"        = var.aws_region
-          "awslogs-stream-prefix" = var.app_name
-        }
-      }
-
-      environment = [
-        # Add Strapi env vars here (DB config, admin JWT, etc.) if needed.
-        { name = "HOST", value = "0.0.0.0" },
-        { name = "PORT", value = tostring(var.container_port) }
-      ]
-    }
-  ])
+  container_definitions = jsonencode([ ... same as your code ... ])
 }
 
 resource "aws_ecs_service" "strapi" {
@@ -49,8 +23,8 @@ resource "aws_ecs_service" "strapi" {
   task_definition = aws_ecs_task_definition.strapi.arn
 
   network_configuration {
-    subnets         = local.public_subnets
-    security_groups = [aws_security_group.ecs_sg.id]
+    subnets          = local.public_subnets
+    security_groups  = [aws_security_group.ecs_sg.id]
     assign_public_ip = true
   }
 

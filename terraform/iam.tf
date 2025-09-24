@@ -1,19 +1,6 @@
-resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "${var.app_name}-task-exec-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Principal = { Service = "ecs-tasks.amazonaws.com" }
-      Effect = "Allow"
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "exec_role_attach" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+# ✅ Use existing ECS execution role instead of creating a new one
+data "aws_iam_role" "ecs_task_execution_role" {
+  name = "ecsTaskExecutionRole" # <-- confirm this name in AWS Console > IAM > Roles
 }
 
 resource "aws_cloudwatch_log_group" "strapi" {
