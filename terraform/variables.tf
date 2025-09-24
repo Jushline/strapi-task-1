@@ -8,6 +8,12 @@ variable "app_name" {
   default     = "strapi-app-jushline"
 }
 
+variable "image_tag" {
+  description = "Docker image tag to deploy"
+  type        = string
+  default     = "latest"
+}
+
 variable "cluster_name" {
   default = "strapi-cluster-jushline"
 }
@@ -36,17 +42,14 @@ variable "ecr_repo_name" {
   default     = "strapi-app"
 }
 
-variable "image_tag" {
-  description = "Tag for Docker image"
-  default     = "latest"
-}
-
 variable "docker_image" {
   description = "ECR image URI for Strapi app"
   type        = string
+  default     = "884740154069.dkr.ecr.ap-south-1.amazonaws.com/strapi-app:latest"
 }
 
 variable "key_name" {
-  description = "Name of the EC2 key pair"
+  description = "Name of the EC2 key pair (not used by Fargate, present for compatibility)"
   type        = string
+  default     = "linux-key"
 }
