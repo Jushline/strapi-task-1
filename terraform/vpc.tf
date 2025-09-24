@@ -1,13 +1,21 @@
-# Use the default VPC and its subnets
+# Use the default VPC
 data "aws_vpc" "default" {
   default = true
 }
 
-data "aws_subnet_ids" "default" {
-  vpc_id = data.aws_vpc.default.id
+# Fetch subnets inside the default VPC
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
 }
 
 locals {
-  # Use the first two subnets for ALB across AZs; if you want all, use data.aws_subnet_ids.default.ids
-  public_subnets = data.aws_subnet_ids.default.ids
+  # Use all default subnets (spans AZs for HA)
+  public_subnets = data.aws_subnets.default.ids
+}
+
+output "subnet_ids" {
+  value = local.public_subnets
 }

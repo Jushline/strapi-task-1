@@ -32,11 +32,21 @@ variable "memory" {
 }
 
 variable "ecr_repo_name" {
-  default = "strapi-app-jushline"
+  description = "ECR repository name"
+  default     = "strapi-app-jushline"
 }
 
-# This is the image tag Terraform will use in the task definition.
-# We'll default to "latest" for the simpler flow. You can override when applying.
 variable "image_tag" {
-  default = "latest"
+  description = "Tag for Docker image"
+  default     = "latest"
+}
+
+variable "docker_image" {
+  description = "ECR image URI for Strapi app"
+  type        = string
+}
+
+variable "key_name" {
+  description = "Name of the EC2 key pair"
+  type        = string
 }
