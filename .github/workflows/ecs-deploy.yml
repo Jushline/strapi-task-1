@@ -76,7 +76,7 @@ jobs:
       - name: Force new ECS deployment
         env:
           CLUSTER: strapi-cluster-jushline
-          SERVICE: strapi-app-service
+          SERVICE: strapi-app-jushline-service
           AWS_REGION: ${{ secrets.AWS_REGION }}
         run: |
           aws ecs update-service --cluster ${CLUSTER} --service ${SERVICE} --force-new-deployment --region ${AWS_REGION}
