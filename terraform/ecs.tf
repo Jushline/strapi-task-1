@@ -9,10 +9,29 @@ resource "aws_ecs_task_definition" "strapi" {
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
 
-  # ✅ Reference existing role instead of creating new one
-  execution_role_arn       = data.aws_iam_role.ecs_task_execution_role.arn
+  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
 
-  container_definitions = jsonencode([ ... same as your code ... ])
+  container_definitions = jsonencode([
+    {
+      name      = var.app_name
+      image     = var.docker_image
+      essential = true
+      portMappings = [
+        {
+          containerPort = var.container_port
+          protocol      = "tcp"
+        }
+      ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.strapi.name
+          awslogs-region        = var.aws_region
+          awslogs-stream-prefix = var.app_name
+        }
+      }
+    }
+  ])
 }
 
 resource "aws_ecs_service" "strapi" {
