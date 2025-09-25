@@ -9,7 +9,7 @@ resource "aws_ecs_task_definition" "strapi_app" {
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
 
-  # Execution role required by Fargate to pull images and publish logs
+  # IAM roles
   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn      = aws_iam_role.ecs_task_execution_role.arn
 
