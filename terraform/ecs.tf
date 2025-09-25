@@ -1,14 +1,18 @@
 resource "aws_ecs_task_definition" "strapi_app" {
-  family                   = "strapi-app-jushline"
+  family                   = "${var.app_name}"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "512"
   memory                   = "1024"
 
+  # IAM roles for pulling image + logging
+  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn      = aws_iam_role.ecs_task_execution_role.arn
+
   container_definitions = jsonencode([
     {
-      name      = "strapi-app-jushline"
-      image     = "${aws_ecr_repository.strapi_app.repository_url}:latest"
+      name      = "${var.app_name}"
+      image     = "${aws_ecr_repository.strapi.repository_url}:latest"
       essential = true
       portMappings = [
         {
@@ -30,6 +34,14 @@ resource "aws_ecs_task_definition" "strapi_app" {
           value = "key1,key2,key3,key4"
         }
       ]
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.strapi.name
+          awslogs-region        = var.region
+          awslogs-stream-prefix = "ecs"
+        }
+      }
     }
   ])
 }
