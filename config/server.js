@@ -6,7 +6,7 @@ module.exports = ({ env }) => ({
       'defaultKey1',
       'defaultKey2',
       'defaultKey3',
-      'defaultKey4'
+      'defaultKey4',
     ]),
   },
 });

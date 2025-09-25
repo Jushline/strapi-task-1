@@ -70,10 +70,8 @@ jobs:
           set -e
           ECR_REG="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           REPO="${ECR_REG}/${ECR_REPOSITORY}"
-          # create repo if not exists
           aws ecr describe-repositories --repository-names "${ECR_REPOSITORY}" --region ${AWS_REGION} || \
             aws ecr create-repository --repository-name "${ECR_REPOSITORY}" --region ${AWS_REGION}
-          # build (npm install used in Dockerfile)
           docker build -t "${ECR_REPOSITORY}:${IMAGE_TAG}" .
           docker tag "${ECR_REPOSITORY}:${IMAGE_TAG}" "${REPO}:${IMAGE_TAG}"
           aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin "${ECR_REG}"

@@ -1,9 +1,7 @@
-# Use the default VPC
 data "aws_vpc" "default" {
   default = true
 }
 
-# Fetch subnets inside the default VPC
 data "aws_subnets" "default" {
   filter {
     name   = "vpc-id"
@@ -12,7 +10,6 @@ data "aws_subnets" "default" {
 }
 
 locals {
-  # Use all default subnets (spans AZs for HA)
   public_subnets = data.aws_subnets.default.ids
 }
 

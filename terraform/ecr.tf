@@ -1,5 +1,5 @@
 resource "aws_ecr_repository" "strapi_app" {
-  name                 = "strapi-app"
+  name                 = var.ecr_repo_name
   image_tag_mutability = "MUTABLE"
 
   image_scanning_configuration {
