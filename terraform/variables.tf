@@ -52,16 +52,48 @@ variable "image_tag" {
   default     = "latest"
 }
 
+# ----------------------
+# 🔑 Strapi required secrets
+# ----------------------
+
 variable "app_keys" {
   description = "Comma separated Strapi APP_KEYS (at least 4). Example: key1,key2,key3,key4"
   type        = string
   default     = "replace_me_keyA,replace_me_keyB,replace_me_keyC,replace_me_keyD"
 }
 
-# If you need DB in ECS, set these (left optional)
+variable "api_token_salt" {
+  description = "API token salt for Strapi (store in terraform.tfvars)"
+  type        = string
+  default     = ""
+}
+
+variable "admin_jwt_secret" {
+  description = "Admin JWT secret for Strapi (store in terraform.tfvars)"
+  type        = string
+  default     = ""
+}
+
+variable "transfer_token_salt" {
+  description = "Transfer token salt for Strapi (store in terraform.tfvars)"
+  type        = string
+  default     = ""
+}
+
+variable "encryption_key" {
+  description = "Encryption key for Strapi (store in terraform.tfvars)"
+  type        = string
+  default     = ""
+}
+
+# ----------------------
+# Optional Database settings
+# ----------------------
+
 variable "database_client" {
-  type    = string
-  default = ""
+  description = "DB client (postgres, mysql, etc)"
+  type        = string
+  default     = ""
 }
 
 variable "database_host" {
