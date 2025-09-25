@@ -6,6 +6,10 @@ on:
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
+  ECR_REPOSITORY: strapi-app
+  IMAGE_TAG: latest
+  CLUSTER: strapi-cluster-jushline
+  SERVICE: strapi-app-jushline-service
 
 jobs:
   terraform:
@@ -36,7 +40,7 @@ jobs:
         run: terraform apply -auto-approve
 
   build_and_push:
-    name: Build and push to ECR
+    name: Build and push Docker image to ECR
     needs: terraform
     runs-on: ubuntu-latest
     steps:
@@ -53,34 +57,30 @@ jobs:
       - name: Get AWS account ID
         id: acct
         run: |
-          echo "ID=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_OUTPUT
+          echo "AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_ENV
 
-      - name: Login to ECR
+      - name: Login to Amazon ECR
         run: |
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
-            | docker login --username AWS --password-stdin ${{ steps.acct.outputs.ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+            | docker login --username AWS --password-stdin ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
-      - name: Build, Tag & Push to ECR
-        env:
-          AWS_ACCOUNT_ID: ${{ steps.acct.outputs.ID }}
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          ECR_REPOSITORY: strapi-app
-          IMAGE_TAG: latest
+      - name: Build, Tag & Push image
         run: |
-          set -e
           ECR_REG="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           REPO="${ECR_REG}/${ECR_REPOSITORY}"
+
+          # Create repo if it doesn't exist
           aws ecr describe-repositories --repository-names "${ECR_REPOSITORY}" --region ${AWS_REGION} || \
             aws ecr create-repository --repository-name "${ECR_REPOSITORY}" --region ${AWS_REGION}
-          docker build -t "${ECR_REPOSITORY}:${IMAGE_TAG}" .
-          docker tag "${ECR_REPOSITORY}:${IMAGE_TAG}" "${REPO}:${IMAGE_TAG}"
-          aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin "${ECR_REG}"
+
+          # Build and push
+          docker build -t "${REPO}:${IMAGE_TAG}" .
           docker push "${REPO}:${IMAGE_TAG}"
 
       - name: Force new ECS deployment
-        env:
-          CLUSTER: strapi-cluster-jushline
-          SERVICE: strapi-app-jushline-service
-          AWS_REGION: ${{ secrets.AWS_REGION }}
         run: |
-          aws ecs update-service --cluster ${CLUSTER} --service ${SERVICE} --force-new-deployment --region ${AWS_REGION}
+          aws ecs update-service \
+            --cluster $CLUSTER \
+            --service $SERVICE \
+            --force-new-deployment \
+            --region $AWS_REGION
