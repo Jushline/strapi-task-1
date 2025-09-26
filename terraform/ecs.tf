@@ -36,15 +36,7 @@ resource "aws_ecs_task_definition" "strapi_app" {
         { name = "API_TOKEN_SALT", value = var.api_token_salt },
         { name = "ADMIN_JWT_SECRET", value = var.admin_jwt_secret },
         { name = "TRANSFER_TOKEN_SALT", value = var.transfer_token_salt },
-        { name = "ENCRYPTION_KEY", value = var.encryption_key },
-
-        # Database config (will fail if left empty)
-        { name = "DATABASE_CLIENT", value = var.database_client },
-        { name = "DATABASE_HOST", value = var.database_host },
-        { name = "DATABASE_PORT", value = "5432" },
-        { name = "DATABASE_NAME", value = var.database_name },
-        { name = "DATABASE_USERNAME", value = var.database_username },
-        { name = "DATABASE_PASSWORD", value = var.database_password }
+        { name = "ENCRYPTION_KEY", value = var.encryption_key }
       ]
 
       logConfiguration = {

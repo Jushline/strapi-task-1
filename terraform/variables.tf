@@ -80,28 +80,3 @@ variable "encryption_key" {
   description = "Encryption key for Strapi"
   type        = string
 }
-
-# ----------------------
-# Database settings (must not be empty)
-# ----------------------
-
-variable "database_client" {
-  description = "DB client (postgres, mysql, etc)"
-  type        = string
-}
-
-variable "database_host" {
-  type = string
-}
-
-variable "database_name" {
-  type = string
-}
-
-variable "database_username" {
-  type = string
-}
-
-variable "database_password" {
-  type = string
-}
