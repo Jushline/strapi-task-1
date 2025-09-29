@@ -1,5 +1,5 @@
 resource "aws_security_group" "alb_sg" {
-  name        = "${var.app_name}-alb-sg"
+  name        = "${var.app_name}-alb-sg-v2"
   description = "ALB security group"
   vpc_id      = data.aws_vpc.default.id
 
@@ -19,7 +19,7 @@ resource "aws_security_group" "alb_sg" {
 }
 
 resource "aws_security_group" "ecs_sg" {
-  name        = "${var.app_name}-ecs-sg"
+  name        = "${var.app_name}-ecs-sg-v2"
   description = "ECS tasks security group (accept traffic from ALB)"
   vpc_id      = data.aws_vpc.default.id
 
