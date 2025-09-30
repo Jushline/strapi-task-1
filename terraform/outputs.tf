@@ -9,5 +9,6 @@ output "ecr_repo_url" {
 }
 
 output "rds_endpoint" {
-  value = aws_db_instance.postgres.address
+  description = "RDS Postgres endpoint"
+  value       = aws_db_instance.postgres.address
 }
