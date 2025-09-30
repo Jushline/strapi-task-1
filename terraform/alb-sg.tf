@@ -1,5 +1,5 @@
 resource "aws_security_group" "alb_sg" {
-  name        = "${var.app_name}-alb-sg"
+  name        = "${var.app_name}-alb-sg-version-2"
   description = "ALB security group"
   vpc_id      = data.aws_vpc.default.id
 
@@ -19,7 +19,7 @@ resource "aws_security_group" "alb_sg" {
 }
 
 resource "aws_security_group" "ecs_sg" {
-  name        = "${var.app_name}-ecs-sg"
+  name        = "${var.app_name}-ecs-sg-version-2"
   description = "ECS tasks security group (accept traffic from ALB)"
   vpc_id      = data.aws_vpc.default.id
 
@@ -39,7 +39,7 @@ resource "aws_security_group" "ecs_sg" {
 }
 
 resource "aws_lb" "app" {
-  name               = "${var.app_name}-alb"
+  name               = "${var.app_name}-alb-version-2"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
@@ -47,7 +47,7 @@ resource "aws_lb" "app" {
 }
 
 resource "aws_lb_target_group" "strapi" {
-  name        = "${var.app_name}-tg"
+  name        = "${var.app_name}-tg-version-2"
   port        = var.container_port
   protocol    = "HTTP"
   target_type = "ip"

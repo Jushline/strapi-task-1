@@ -9,7 +9,6 @@ resource "aws_ecs_task_definition" "strapi_app" {
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
 
-  # ECS execution role (needed to pull ECR images, write CloudWatch logs)
   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn      = aws_iam_role.ecs_task_execution_role.arn
 
@@ -27,7 +26,6 @@ resource "aws_ecs_task_definition" "strapi_app" {
       ]
 
       environment = [
-        # --- Strapi required configs ---
         { name = "HOST",                value = "0.0.0.0" },
         { name = "PORT",                value = tostring(var.container_port) },
         { name = "APP_KEYS",            value = var.app_keys },
@@ -36,9 +34,9 @@ resource "aws_ecs_task_definition" "strapi_app" {
         { name = "TRANSFER_TOKEN_SALT", value = var.transfer_token_salt },
         { name = "ENCRYPTION_KEY",      value = var.encryption_key },
 
-        # --- Database settings (point to RDS Postgres) ---
+        # --- Database settings (RDS Postgres) ---
         { name = "DATABASE_CLIENT",     value = var.database_client },
-        { name = "DATABASE_HOST",       value = aws_db_instance.postgres.address }, # Auto-pick RDS endpoint
+        { name = "DATABASE_HOST",       value = aws_db_instance.postgres.address },
         { name = "DATABASE_PORT",       value = tostring(var.database_port) },
         { name = "DATABASE_NAME",       value = var.database_name },
         { name = "DATABASE_USERNAME",   value = var.database_username },
@@ -58,7 +56,7 @@ resource "aws_ecs_task_definition" "strapi_app" {
 }
 
 resource "aws_ecs_service" "strapi" {
-  name            = "${var.app_name}-service"
+  name            = "${var.app_name}-service-version-2"
   cluster         = aws_ecs_cluster.this.id
   desired_count   = var.desired_count
   launch_type     = "FARGATE"
@@ -78,6 +76,6 @@ resource "aws_ecs_service" "strapi" {
 
   depends_on = [
     aws_lb_listener.http,
-    aws_db_instance.postgres # ✅ ensures DB is ready before ECS tasks run
+    aws_db_instance.postgres
   ]
 }
