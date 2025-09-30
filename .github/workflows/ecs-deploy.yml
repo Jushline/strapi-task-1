@@ -3,7 +3,8 @@ name: infra-and-deploy
 on:
   push:
     branches: [ jushline ]
-  workflow_dispatch:  
+  workflow_dispatch:
+
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   ECR_REPOSITORY: strapi-app
@@ -17,29 +18,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.5.0
+
       - name: Terraform Init
         working-directory: ./terraform
         run: terraform init
+
       - name: Terraform Apply (create infra)
         working-directory: ./terraform
-        run: terraform apply -auto-approve \
-          -var="app_keys=${{ secrets.APP_KEYS }}" \
-          -var="api_token_salt=${{ secrets.API_TOKEN_SALT }}" \
-          -var="admin_jwt_secret=${{ secrets.ADMIN_JWT_SECRET }}" \
-          -var="database_password=${{ secrets.DATABASE_PASSWORD }}" \
-          -var="database_username=${{ secrets.DATABASE_USERNAME }}" \
-          -var="database_name=${{ secrets.DATABASE_NAME }}" \
-          -var="database_host=${{ secrets.DATABASE_HOST }}"
+        run: |
+          terraform apply -auto-approve \
+            -var="app_keys=${{ secrets.APP_KEYS }}" \
+            -var="api_token_salt=${{ secrets.API_TOKEN_SALT }}" \
+            -var="admin_jwt_secret=${{ secrets.ADMIN_JWT_SECRET }}" \
+            -var="database_password=${{ secrets.DATABASE_PASSWORD }}" \
+            -var="database_username=${{ secrets.DATABASE_USERNAME }}" \
+            -var="database_name=${{ secrets.DATABASE_NAME }}" \
+            -var="database_host=${{ secrets.DATABASE_HOST }}"
 
   build_and_push:
     name: Build and push Docker image to ECR
@@ -47,19 +53,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+
       - name: Get AWS account ID
         id: acct
         run: echo "AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)" >> $GITHUB_ENV
+
       - name: Login to Amazon ECR
         run: |
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
             | docker login --username AWS --password-stdin ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+
       - name: Build, Tag & Push image
         run: |
           ECR_REG="${AWS_ACCOUNT_ID}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com"
@@ -68,6 +78,11 @@ jobs:
             aws ecr create-repository --repository-name "${{ env.ECR_REPOSITORY }}" --region ${{ secrets.AWS_REGION }}
           docker build -t "${REPO}:${{ env.IMAGE_TAG }}" .
           docker push "${REPO}:${{ env.IMAGE_TAG }}"
+
       - name: Force new ECS deployment
         run: |
-          aws ecs update-service --cluster ${{ env.CLUSTER }} --service ${{ env.SERVICE }} --force-new-deployment --region ${{ secrets.AWS_REGION }}
+          aws ecs update-service \
+            --cluster ${{ env.CLUSTER }} \
+            --service ${{ env.SERVICE }} \
+            --force-new-deployment \
+            --region ${{ secrets.AWS_REGION }}
