@@ -7,3 +7,7 @@ output "ecr_repo_url" {
   description = "ECR repo url"
   value       = aws_ecr_repository.strapi_app.repository_url
 }
+
+output "rds_endpoint" {
+  value = aws_db_instance.postgres.address
+}

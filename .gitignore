@@ -136,3 +136,13 @@ build
 .terraform/
 .terraform.lock.hcl
 terraform.tfvars
+
+# Terraform state and vars
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/.terraform
+terraform/terraform.tfvars
+
+# local node modules and logs
+node_modules
+.env

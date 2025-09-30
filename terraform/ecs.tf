@@ -9,7 +9,6 @@ resource "aws_ecs_task_definition" "strapi_app" {
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
 
-  # IAM roles
   execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn      = aws_iam_role.ecs_task_execution_role.arn
 
@@ -18,27 +17,25 @@ resource "aws_ecs_task_definition" "strapi_app" {
       name      = var.app_name
       image     = "${aws_ecr_repository.strapi_app.repository_url}:${var.image_tag}"
       essential = true
-
-      portMappings = [
-        {
-          containerPort = var.container_port
-          protocol      = "tcp"
-        }
-      ]
-
-      environment = [
-        # Strapi basics
-        { name = "HOST", value = "0.0.0.0" },
-        { name = "PORT", value = tostring(var.container_port) },
-
-        # Required secrets
-        { name = "APP_KEYS", value = var.app_keys },
-        { name = "API_TOKEN_SALT", value = var.api_token_salt },
-        { name = "ADMIN_JWT_SECRET", value = var.admin_jwt_secret },
-        { name = "TRANSFER_TOKEN_SALT", value = var.transfer_token_salt },
-        { name = "ENCRYPTION_KEY", value = var.encryption_key }
-      ]
-
+      portMappings = [{ containerPort = var.container_port, protocol = "tcp" }]
+      environment = concat(
+        [
+          { name = "HOST", value = "0.0.0.0" },
+          { name = "PORT", value = tostring(var.container_port) },
+          { name = "APP_KEYS", value = var.app_keys },
+          { name = "API_TOKEN_SALT", value = var.api_token_salt },
+          { name = "ADMIN_JWT_SECRET", value = var.admin_jwt_secret },
+          { name = "TRANSFER_TOKEN_SALT", value = var.transfer_token_salt },
+          { name = "ENCRYPTION_KEY", value = var.encryption_key },
+          { name = "DATABASE_CLIENT", value = var.database_client },
+          { name = "DATABASE_HOST", value = coalesce(var.database_host, aws_db_instance.postgres.address) },
+          { name = "DATABASE_PORT", value = tostring(var.database_port) },
+          { name = "DATABASE_NAME", value = var.database_name },
+          { name = "DATABASE_USERNAME", value = var.database_username },
+          { name = "DATABASE_PASSWORD", value = var.database_password }
+        ],
+        []
+      )
       logConfiguration = {
         logDriver = "awslogs"
         options = {
