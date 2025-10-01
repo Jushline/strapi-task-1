@@ -1,8 +1,23 @@
+# Fetch default VPC
+data "aws_vpc" "default" {
+  default = true
+}
+
+# Fetch subnets in default VPC
+data "aws_subnets" "default" {
+  filter {
+    name   = "vpc-id"
+    values = [data.aws_vpc.default.id]
+  }
+}
+
+# Reuse default VPC subnets for RDS
 resource "aws_db_subnet_group" "rds_subnets" {
-  name       = "${var.app_name}-rds-subnet-group"
-  subnet_ids = local.public_subnets
+  name       = "${var.app_name}-rds-default-subnets"
+  subnet_ids = data.aws_subnets.default.ids
+
   tags = {
-    Name = "${var.app_name}-rds"
+    Name = "${var.app_name}-rds-default"
   }
 }
 
