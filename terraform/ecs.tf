@@ -2,9 +2,10 @@ resource "aws_ecs_cluster" "this" {
   name = var.cluster_name
 }
 
-# pick DB host: use provided var.database_host if given, otherwise use created RDS endpoint
 locals {
-  db_host = length(trim(var.database_host)) > 0 ? var.database_host : aws_db_instance.postgres.address
+  # if user provided a database_host, use it; else use RDS endpoint
+  db_host = length(var.database_host) > 0 ? var.database_host : aws_db_instance.postgres.address
+
   container_env = [
     { name = "HOST",               value = "0.0.0.0" },
     { name = "PORT",               value = tostring(var.container_port) },
