@@ -1,0 +1,14 @@
+# copy to terraform/terraform.tfvars and fill in secrets OR provide via GitHub secrets
+aws_region = "ap-south-1"
+
+app_keys = "k1,k2,k3,k4"
+api_token_salt = "replace_api_token_salt"
+admin_jwt_secret = "replace_admin_jwt_secret"
+transfer_token_salt = "replace_transfer_salt"
+encryption_key = "replace_encryption_key"
+
+# if you want RDS created by Terraform, leave database_host empty
+database_host = ""
+database_name = "strapidb"
+database_username = "strapi"
+database_password = "replace_db_password"

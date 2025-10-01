@@ -31,19 +31,18 @@ jobs:
         with:
           terraform_version: 1.5.0
 
-      - name: Terraform Init
-        working-directory: ./terraform
-        run: terraform init
-
-      - name: Terraform Apply (create infra)
+      - name: Terraform Init & Apply
         working-directory: ./terraform
         run: |
+          terraform init
           terraform apply -auto-approve \
             -var="app_keys=${{ secrets.APP_KEYS }}" \
             -var="api_token_salt=${{ secrets.API_TOKEN_SALT }}" \
             -var="admin_jwt_secret=${{ secrets.ADMIN_JWT_SECRET }}" \
-            -var="database_password=${{ secrets.DATABASE_PASSWORD }}" \
+            -var="transfer_token_salt=${{ secrets.TRANSFER_TOKEN_SALT }}" \
+            -var="encryption_key=${{ secrets.ENCRYPTION_KEY }}" \
             -var="database_username=${{ secrets.DATABASE_USERNAME }}" \
+            -var="database_password=${{ secrets.DATABASE_PASSWORD }}" \
             -var="database_name=${{ secrets.DATABASE_NAME }}" \
             -var="database_host=${{ secrets.DATABASE_HOST }}"
 
@@ -72,17 +71,13 @@ jobs:
 
       - name: Build, Tag & Push image
         run: |
-          ECR_REG="${AWS_ACCOUNT_ID}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com"
-          REPO="${ECR_REG}/${{ env.ECR_REPOSITORY }}"
-          aws ecr describe-repositories --repository-names "${{ env.ECR_REPOSITORY }}" --region ${{ secrets.AWS_REGION }} || \
-            aws ecr create-repository --repository-name "${{ env.ECR_REPOSITORY }}" --region ${{ secrets.AWS_REGION }}
-          docker build -t "${REPO}:${{ env.IMAGE_TAG }}" .
-          docker push "${REPO}:${{ env.IMAGE_TAG }}"
+          ECR_REG="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+          REPO="${ECR_REG}/${ECR_REPOSITORY}"
+          aws ecr describe-repositories --repository-names "${ECR_REPOSITORY}" --region ${AWS_REGION} || \
+            aws ecr create-repository --repository-name "${ECR_REPOSITORY}" --region ${AWS_REGION}
+          docker build -t "${REPO}:${IMAGE_TAG}" .
+          docker push "${REPO}:${IMAGE_TAG}"
 
       - name: Force new ECS deployment
         run: |
-          aws ecs update-service \
-            --cluster ${{ env.CLUSTER }} \
-            --service ${{ env.SERVICE }} \
-            --force-new-deployment \
-            --region ${{ secrets.AWS_REGION }}
+          aws ecs update-service --cluster ${{ env.CLUSTER }} --service ${{ env.SERVICE }} --force-new-deployment --region ${{ secrets.AWS_REGION }}

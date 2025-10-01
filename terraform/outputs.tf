@@ -9,6 +9,6 @@ output "ecr_repo_url" {
 }
 
 output "rds_endpoint" {
-  description = "RDS endpoint for Postgres"
-  value       = aws_db_instance.postgres.address
+  description = "RDS endpoint (if created)"
+  value       = try(aws_db_instance.postgres.address, "")
 }

@@ -1,4 +1,7 @@
-data "aws_vpc" "default" { default = true }
+# Use default VPC
+data "aws_vpc" "default" {
+  default = true
+}
 
 data "aws_subnets" "default" {
   filter {
@@ -10,7 +13,6 @@ data "aws_subnets" "default" {
 locals {
   public_subnets = data.aws_subnets.default.ids
 }
-
 output "subnet_ids" {
   value = local.public_subnets
 }

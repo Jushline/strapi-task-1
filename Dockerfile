@@ -1,16 +1,10 @@
 FROM node:18-alpine
-
 WORKDIR /app
-
 COPY package*.json ./
-
-# install production dependencies only
-RUN npm install --omit=dev
-
+RUN npm install
 COPY . .
-
-# build if Strapi project has a build step (optional)
-RUN npm run build || echo "no build step"
+# if you have a build step (for frontend/admin), run it:
+RUN npm run build || true
 
 EXPOSE 1337
-CMD ["npm", "run", "start"]
+CMD ["npm", "start"]

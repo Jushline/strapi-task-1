@@ -1,5 +1,5 @@
 resource "aws_security_group" "alb_sg" {
-  name_prefix = "${var.app_name}-alb-"   # ✅ ensures uniqueness
+  name        = "${var.app_name}-alb-sg"
   description = "ALB security group"
   vpc_id      = data.aws_vpc.default.id
 
@@ -19,7 +19,7 @@ resource "aws_security_group" "alb_sg" {
 }
 
 resource "aws_security_group" "ecs_sg" {
-  name_prefix = "${var.app_name}-ecs-"   # ✅ ensures uniqueness
+  name        = "${var.app_name}-ecs-sg"
   description = "ECS tasks security group (accept traffic from ALB)"
   vpc_id      = data.aws_vpc.default.id
 
@@ -39,7 +39,6 @@ resource "aws_security_group" "ecs_sg" {
 }
 
 resource "aws_lb" "app" {
-  name_prefix        = "${var.app_name}-alb-"   # ✅ avoids duplicate ALB name
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
@@ -47,7 +46,7 @@ resource "aws_lb" "app" {
 }
 
 resource "aws_lb_target_group" "strapi" {
-  name_prefix = "${var.app_name}-tg-"   # ✅ avoids duplicate TG name
+  name_prefix = "tg-"
   port        = var.container_port
   protocol    = "HTTP"
   target_type = "ip"
