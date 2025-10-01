@@ -3,7 +3,7 @@ name: infra-and-deploy
 on:
   push:
     branches: [ jushline ]
-  workflow_dispatch:
+  workflow_dispatch:  
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
@@ -14,7 +14,7 @@ env:
 
 jobs:
   terraform:
-    name: Terraform apply
+    name: Terraform Init & Apply
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,8 +34,8 @@ jobs:
       - name: Terraform Init & Apply
         working-directory: ./terraform
         run: |
-          terraform init
-          terraform apply -auto-approve \
+          terraform init -input=false
+          terraform apply -auto-approve -input=false \
             -var="app_keys=${{ secrets.APP_KEYS }}" \
             -var="api_token_salt=${{ secrets.API_TOKEN_SALT }}" \
             -var="admin_jwt_secret=${{ secrets.ADMIN_JWT_SECRET }}" \
@@ -47,7 +47,7 @@ jobs:
             -var="database_host=${{ secrets.DATABASE_HOST }}"
 
   build_and_push:
-    name: Build and push Docker image to ECR
+    name: Build and Push Docker Image to ECR
     needs: terraform
     runs-on: ubuntu-latest
     steps:
@@ -69,15 +69,23 @@ jobs:
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} \
             | docker login --username AWS --password-stdin ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
-      - name: Build, Tag & Push image
+      - name: Build, Tag & Push Docker Image
         run: |
           ECR_REG="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           REPO="${ECR_REG}/${ECR_REPOSITORY}"
+
+          # Create repo if not exists
           aws ecr describe-repositories --repository-names "${ECR_REPOSITORY}" --region ${AWS_REGION} || \
             aws ecr create-repository --repository-name "${ECR_REPOSITORY}" --region ${AWS_REGION}
+
+          # Build and push
           docker build -t "${REPO}:${IMAGE_TAG}" .
           docker push "${REPO}:${IMAGE_TAG}"
 
       - name: Force new ECS deployment
         run: |
-          aws ecs update-service --cluster ${{ env.CLUSTER }} --service ${{ env.SERVICE }} --force-new-deployment --region ${{ secrets.AWS_REGION }}
+          aws ecs update-service \
+            --cluster ${{ env.CLUSTER }} \
+            --service ${{ env.SERVICE }} \
+            --force-new-deployment \
+            --region ${{ secrets.AWS_REGION }}
