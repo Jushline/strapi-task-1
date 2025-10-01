@@ -1,20 +1,8 @@
-# Fetch default VPC
-data "aws_vpc" "default" {
-  default = true
-}
 
-# Fetch subnets in default VPC
-data "aws_subnets" "default" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
-  }
-}
 
-# Reuse default VPC subnets for RDS
 resource "aws_db_subnet_group" "rds_subnets" {
   name       = "${var.app_name}-rds-default-subnets"
-  subnet_ids = data.aws_subnets.default.ids
+  subnet_ids = data.aws_subnets.default.ids   # Reuse from vpc.tf
 
   tags = {
     Name = "${var.app_name}-rds-default"
@@ -33,8 +21,9 @@ resource "aws_db_instance" "postgres" {
   skip_final_snapshot     = true
   publicly_accessible     = true
   db_subnet_group_name    = aws_db_subnet_group.rds_subnets.name
-  vpc_security_group_ids  = [aws_security_group.ecs_sg.id]
+  vpc_security_group_ids  = [aws_security_group.ecs_sg.id] # allow ECS tasks to access DB
   port                    = var.database_port
+
   tags = {
     Name = "${var.app_name}-postgres"
   }
