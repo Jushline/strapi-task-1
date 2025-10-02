@@ -74,17 +74,19 @@ jobs:
           ECR_REG="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
           REPO="${ECR_REG}/${ECR_REPOSITORY}"
 
-          # Ensure repo exists
-          aws ecr describe-repositories --repository-names "${ECR_REPOSITORY}" --region ${AWS_REGION} >/dev/null 2>&1 || \
+          # Ensure repo exists (no Terraform conflict, we manage here)
+          aws ecr describe-repositories --repository-names "${ECR_REPOSITORY}" --region ${AWS_REGION} || \
             aws ecr create-repository --repository-name "${ECR_REPOSITORY}" --region ${AWS_REGION}
 
-          # Build and push
+          # Build & push image
           docker build -t "${REPO}:${IMAGE_TAG}" .
           docker push "${REPO}:${IMAGE_TAG}"
 
-      - name: Force new ECS deployment (refresh with latest image)
+          # Give AWS time to sync the new image
+          sleep 30
+
+      - name: Force new ECS deployment
         run: |
-          echo "Forcing ECS service to refresh and pull the new image..."
           aws ecs update-service \
             --cluster ${{ env.CLUSTER }} \
             --service ${{ env.SERVICE }} \
