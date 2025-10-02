@@ -3,10 +3,6 @@ output "alb_dns" {
   value       = aws_lb.app.dns_name
 }
 
-output "ecr_repo_url" {
-  description = "ECR repo url"
-  value       = aws_ecr_repository.strapi_app.repository_url
-}
 
 output "rds_endpoint" {
   description = "RDS endpoint (if created)"

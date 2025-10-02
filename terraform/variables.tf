@@ -4,6 +4,11 @@ variable "aws_region" {
   default     = "ap-south-1"
 }
 
+variable "aws_account_id" {
+  description = "AWS Account ID"
+  type        = string
+}
+
 variable "app_name" {
   description = "Application name (used for naming resources)"
   type        = string
@@ -47,11 +52,10 @@ variable "ecr_repo_name" {
 }
 
 variable "image_tag" {
-  description = "Docker image tag to deploy"
+  description = "Docker image tag"
   type        = string
   default     = "latest"
 }
-
 # Strapi required secrets (supply via terraform.tfvars or -var in CI)
 variable "app_keys" {
   description = "Comma separated Strapi APP_KEYS (at least 4). Example: key1,key2,key3,key4"

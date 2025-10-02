@@ -15,7 +15,11 @@ resource "aws_ecs_task_definition" "strapi_app" {
   container_definitions = jsonencode([
     {
       name      = var.app_name
-      image     = "${aws_ecr_repository.strapi_app.repository_url}:${var.image_tag}"
+
+      # ✅ Removed aws_ecr_repository reference
+      # Use repo string built from variables
+      image     = "${var.aws_account_id}.dkr.ecr.${var.aws_region}.amazonaws.com/${var.ecr_repo_name}:${var.image_tag}"
+
       essential = true
 
       portMappings = [
