@@ -1,4 +1,5 @@
 # alb-sg.tf
+
 resource "aws_security_group" "alb_sg" {
   description = "ALB security group (allow HTTP)"
   vpc_id      = data.aws_vpc.default.id
@@ -28,7 +29,6 @@ resource "aws_security_group" "ecs_sg" {
   description = "ECS tasks security group (accept traffic from ALB)"
   vpc_id      = data.aws_vpc.default.id
 
-  # Allow ALB -> ECS (app port)
   ingress {
     description     = "Allow ALB to talk to container port"
     from_port       = var.container_port
@@ -37,7 +37,6 @@ resource "aws_security_group" "ecs_sg" {
     security_groups = [aws_security_group.alb_sg.id]
   }
 
-  # ECS tasks need outbound to anywhere (to reach RDS/ECR/internet)
   egress {
     description = "Allow all outbound"
     from_port   = 0
@@ -51,12 +50,10 @@ resource "aws_security_group" "ecs_sg" {
   }
 }
 
-# Separate security group for RDS (more secure, simplest correct wiring)
 resource "aws_security_group" "rds_sg" {
   description = "RDS security group (allow postgres from ECS)"
   vpc_id      = data.aws_vpc.default.id
 
-  # Allow ECS tasks (ecs_sg) to connect to Postgres (5432)
   ingress {
     description     = "Allow ECS tasks to connect to Postgres"
     from_port       = 5432
@@ -65,7 +62,6 @@ resource "aws_security_group" "rds_sg" {
     security_groups = [aws_security_group.ecs_sg.id]
   }
 
-  # RDS needs outbound (NTP, etc) - keep open
   egress {
     description = "Allow all outbound"
     from_port   = 0
@@ -79,11 +75,40 @@ resource "aws_security_group" "rds_sg" {
   }
 }
 
-# ALB: don't force a custom name that may collide with AWS limits.
-# Let AWS/TF assign a friendly name (no name attribute). Security groups + subnets specified.
+# ALB
 resource "aws_lb" "app" {
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb_sg.id]
   subnets            = local.public_subnets
+}
+
+# ✅ Target group for ECS service
+resource "aws_lb_target_group" "strapi" {
+  name_prefix = "tg-"   # short prefix, avoids 32-char limit
+  port        = var.container_port
+  protocol    = "HTTP"
+  target_type = "ip"
+  vpc_id      = data.aws_vpc.default.id
+
+  health_check {
+    path                = "/"
+    matcher             = "200-399"
+    interval            = 30
+    timeout             = 5
+    healthy_threshold   = 2
+    unhealthy_threshold = 2
+  }
+}
+
+# ✅ Listener for ALB
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.app.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.strapi.arn
+  }
 }
