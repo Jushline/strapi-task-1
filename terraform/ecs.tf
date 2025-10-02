@@ -69,13 +69,13 @@ resource "aws_ecs_service" "strapi" {
   }
 
   load_balancer {
-    target_group_arn = aws_lb_target_group.strapi.arn   
+    target_group_arn = aws_lb_target_group.strapi.arn   # ✅ fixed name
     container_name   = var.app_name
     container_port   = var.container_port
   }
 
   depends_on = [
-    aws_lb_listener.http,    
+    aws_lb_listener.http,       # ✅ fixed name
     aws_db_instance.postgres
   ]
 }
