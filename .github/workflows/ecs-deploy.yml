@@ -13,42 +13,8 @@ env:
   SERVICE: strapi-app-jushline-service
 
 jobs:
-  terraform:
-    name: Terraform Init & Apply
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v2
-        with:
-          terraform_version: 1.5.0
-
-      - name: Terraform Init & Apply
-        working-directory: ./terraform
-        run: |
-          terraform init -input=false
-          terraform apply -auto-approve -input=false \
-            -var="app_keys=${{ secrets.APP_KEYS }}" \
-            -var="api_token_salt=${{ secrets.API_TOKEN_SALT }}" \
-            -var="admin_jwt_secret=${{ secrets.ADMIN_JWT_SECRET }}" \
-            -var="transfer_token_salt=${{ secrets.TRANSFER_TOKEN_SALT }}" \
-            -var="encryption_key=${{ secrets.ENCRYPTION_KEY }}" \
-            -var="database_username=${{ secrets.DATABASE_USERNAME }}" \
-            -var="database_password=${{ secrets.DATABASE_PASSWORD }}" \
-            -var="database_name=${{ secrets.DATABASE_NAME }}" \
-            -var="database_host=${{ secrets.DATABASE_HOST }}"
-
   build_and_push:
     name: Build and Push Docker Image to ECR
-    needs: terraform
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -81,6 +47,40 @@ jobs:
           # Build and push
           docker build -t "${REPO}:${IMAGE_TAG}" .
           docker push "${REPO}:${IMAGE_TAG}"
+
+  terraform:
+    name: Terraform Init & Apply
+    needs: build_and_push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.0
+
+      - name: Terraform Init & Apply
+        working-directory: ./terraform
+        run: |
+          terraform init -input=false
+          terraform apply -auto-approve -input=false \
+            -var="app_keys=${{ secrets.APP_KEYS }}" \
+            -var="api_token_salt=${{ secrets.API_TOKEN_SALT }}" \
+            -var="admin_jwt_secret=${{ secrets.ADMIN_JWT_SECRET }}" \
+            -var="transfer_token_salt=${{ secrets.TRANSFER_TOKEN_SALT }}" \
+            -var="encryption_key=${{ secrets.ENCRYPTION_KEY }}" \
+            -var="database_username=${{ secrets.DATABASE_USERNAME }}" \
+            -var="database_password=${{ secrets.DATABASE_PASSWORD }}" \
+            -var="database_name=${{ secrets.DATABASE_NAME }}" \
+            -var="database_host=${{ secrets.DATABASE_HOST }}"
 
       - name: Force new ECS deployment
         run: |
