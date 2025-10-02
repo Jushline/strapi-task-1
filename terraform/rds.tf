@@ -29,8 +29,3 @@ resource "aws_db_instance" "postgres" {
     Name = "${var.app_name}-postgres"
   }
 }
-
-output "rds_endpoint" {
-  description = "Public RDS endpoint (address)"
-  value       = aws_db_instance.postgres.address
-}
